@@ -17,37 +17,59 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## ลำดับการรัน (ต้องรันตามลำดับ)
+## วิธีรัน
 
-เปิด Jupyter จากโฟลเดอร์โปรเจกต์ (`jupyter lab`) แล้วรันแต่ละ notebook ด้วย **Restart Kernel & Run All**
-
-| ลำดับ | Notebook | ผลลัพธ์ |
-|---|---|---|
-| 1 | `notebooks/00_data_understanding.ipynb` | สำรวจข้อมูล, Data Dictionary, Feature Selection (ไม่สร้างไฟล์) |
-| 2 | `notebooks/01_cleaning.ipynb` | `passengers_clean_long.csv`, `service_catalog.csv`, `quality_log.csv`, `figures/01_quality_heatmap.png` |
-| 3 | `notebooks/02_q1_weekday_weekend.ipynb` | `q1_daily_features.csv`, `figures/q1_*.png` |
-| 4 | `notebooks/03_q2_yoy_2568_2569.ipynb` | `q2_yoy_comparison.csv`, `q2_missing_sensitivity.csv`, `figures/q2_*.png` |
-| 5 | `notebooks/04_q3_international.ipynb` | `q3_international_monthly.csv`, `figures/q3_*.png` |
-
-ตรวจการรันซ้ำทั้งหมดในคำสั่งเดียว (ใช้ก่อนส่งงาน):
+**ทางเดียวจบ (ใช้ก่อนส่งงาน):** สร้าง prepared CSV และรูปทั้งหมดจากไฟล์ดิบ
 
 ```bash
-cd notebooks
-for nb in 0*.ipynb; do jupyter nbconvert --to notebook --execute --inplace "$nb"; done
+python src/run_all.py            # บอกว่าขั้นไหนยังเป็น TODO
+python src/run_all.py --strict   # ต้องผ่าน (exit 0) ก่อนส่งงาน
+pytest                           # ตรวจ contract ของทุกฟังก์ชัน
 ```
+
+**ดูผลพร้อมคำอธิบาย:** เปิด `jupyter lab` แล้วรันทีละ notebook ด้วย **Restart Kernel & Run All**
+
+| ลำดับ | Notebook | เรียกโค้ดจาก | ผลลัพธ์ |
+|---|---|---|---|
+| 1 | `00_data_understanding.ipynb` | `prep` | สำรวจข้อมูล, Data Dictionary, Feature Selection |
+| 2 | `01_cleaning.ipynb` | `prep`, `plots` | `passengers_clean_long.csv`, `service_catalog.csv`, `quality_log.csv`, `01_quality_heatmap.png` |
+| 3 | `02_q1_weekday_weekend.ipynb` | `q1_weekday` | `q1_daily_features.csv`, `q1_*.png` |
+| 4 | `03_q2_yoy_2568_2569.ipynb` | `q2_yoy` | `q2_yoy_comparison.csv`, `q2_missing_sensitivity.csv`, `q2_*.png` |
+| 5 | `04_q3_international.ipynb` | `q3_intl` | `q3_international_monthly.csv`, `q3_*.png` |
+
+## โครงสร้างโค้ด
+
+**หลักการ:** logic ทั้งหมดอยู่ใน `src/*.py` (import ได้, test ได้, diff อ่านง่าย) · notebook มีแค่ markdown อธิบาย + เรียกฟังก์ชัน + แสดงผล เพื่อเป็นหลักฐานให้ผู้ตรวจ
+
+```
+src/
+  prep.py        โหลด + ทำความสะอาด + build_all()                       (A) ✅
+  features.py    feature ที่ใช้หลายข้อ: calendar, safe_pct_change, monthly  ✅
+  plots.py       สไตล์กราฟร่วม, ฟอนต์ไทย, save_fig                       (C) ✅
+  q1_weekday.py  ข้อ 1                                                   (A) select_rows ✅ ที่เหลือ TODO
+  q2_yoy.py      ข้อ 2 + สถานการณ์ S1–S5                                 (B) window/select_rows ✅ ที่เหลือ TODO
+  q3_intl.py     ข้อ 3                                                   (C) select_rows/coverage ✅ ที่เหลือ TODO
+  run_all.py     รันทั้ง pipeline
+tests/           pytest: test_prep, test_features, test_q1_weekday, test_q2_yoy, test_q3_intl
+notebooks/       00–04 (บาง)
+```
+
+**ขั้นตอนทำงานของแต่ละคน**
+1. อ่าน docstring ของฟังก์ชัน `TODO(A/B/C)` ในไฟล์ของตัวเอง ซึ่งระบุคอลัมน์ผลลัพธ์และสูตรไว้แล้ว
+2. เขียนฟังก์ชัน → `pytest tests/test_<ไฟล์>.py` จนเทสต์ที่เคย skip เปลี่ยนเป็น pass
+3. ลบ `#` หน้า cell ที่เกี่ยวข้องใน notebook → Restart & Run All → เขียนการตีความใน markdown
+4. commit เฉพาะไฟล์ของตัวเอง
 
 ## โครงสร้างโฟลเดอร์
 
 ```
 AIE314_Topic4/
-├── data/
-│   ├── raw/          ไฟล์ต้นฉบับ (ห้ามแก้ไข)
-│   └── prepared/     ไฟล์ที่โค้ดสร้าง (ส่งทุกไฟล์)
-├── src/prep.py       ฟังก์ชันร่วมสำหรับโหลดและทำความสะอาดข้อมูล (ทุก notebook import)
-├── notebooks/        00–04
-├── figures/          กราฟทั้งหมดที่ใช้ในรายงานและสไลด์ (สร้างจาก notebook เท่านั้น)
-├── report/           โครงรายงาน + รายงาน PDF ฉบับส่ง
-└── slides/           โครงสไลด์ + สไลด์ฉบับส่ง
+├── data/raw/          ไฟล์ต้นฉบับ (ห้ามแก้ไข)
+├── data/prepared/     ไฟล์ที่โค้ดสร้าง (ส่งทุกไฟล์)
+├── src/  tests/  notebooks/
+├── figures/           กราฟทั้งหมด (สร้างจากโค้ดเท่านั้น)
+├── report/            โครงรายงาน + รายงาน PDF ฉบับส่ง
+└── slides/            โครงสไลด์ + สไลด์ฉบับส่ง
 ```
 
 ## Prepared Datasets
@@ -84,7 +106,7 @@ AIE314_Topic4/
 
 ## กติกาของทีม
 
-- หนึ่งคนหนึ่ง notebook · แก้ `src/prep.py` หลัง M2 (22 พ.ย.) เฉพาะเมื่อทั้งทีมตกลงกันแล้ว
+- หนึ่งคนหนึ่งไฟล์ `src/qN_*.py` + notebook ของตัวเอง · แก้ `src/prep.py`, `features.py`, `plots.py` หลัง M2 (22 พ.ย.) เฉพาะเมื่อทั้งทีมตกลงกันแล้ว
 - ทุกตัวเลขหรือกราฟในรายงานและสไลด์ต้องมาจาก output ของ notebook
-- ใช้ relative path เท่านั้น · บันทึกกราฟด้วย `prep.save_fig()`
+- ใช้ relative path เท่านั้น · บันทึกกราฟด้วย `plots.save_fig()` · ก่อนส่งงาน `run_all.py --strict` และ `pytest` ต้องผ่าน
 - ตรวจงานไขว้: A ตรวจข้อ 2 · B ตรวจข้อ 3 · C ตรวจข้อ 1

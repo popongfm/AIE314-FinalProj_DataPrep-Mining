@@ -3,6 +3,8 @@
 Every notebook imports from here so that loading and cleaning happen in exactly one place.
 Owner: member A. Change this file only after the whole team agrees (after milestone M2).
 
+Plotting helpers (Thai font, save_fig) live in plots.py.
+
 Pipeline:
     raw CSV --load_raw--> raw rows (empty rows dropped)
             --to_standard--> English column names, parsed date and value
@@ -275,29 +277,20 @@ def passenger_rows(df: pd.DataFrame) -> pd.DataFrame:
     return df[(df["unit"] == "คน") & (df["exclude_reason"] == "") & (~df["is_aggregate"])].copy()
 
 
-def setup_thai_font() -> str | None:
-    """Pick the first installed font that can draw Thai so chart labels are not boxes."""
-    import matplotlib.pyplot as plt
-    from matplotlib import font_manager
+def build_all(save: bool = True) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Run the whole cleaning stage: raw files -> (clean_long, service_catalog, quality_log).
 
-    # matplotlib (Agg) does no complex-script shaping, so fonts that rely on it
-    # (e.g. Thonburi) draw floating vowels / dotted circles. Sukhumvit Set renders
-    # tone marks and upper vowels correctly without shaping, so it goes first.
-    candidates = ["Sukhumvit Set", "Noto Sans Thai", "Sarabun", "TH Sarabun New",
-                  "Leelawadee UI", "Tahoma", "Loma", "Garuda", "Thonburi"]
-    installed = {f.name for f in font_manager.fontManager.ttflist}
-    for name in candidates:
-        if name in installed:
-            plt.rcParams["font.family"] = name
-            plt.rcParams["axes.unicode_minus"] = False
-            return name
-    print("Warning: no Thai font found; Thai labels may not render. Install Sarabun or Noto Sans Thai.")
-    return None
-
-
-def save_fig(fig, name: str) -> Path:
-    """Save a figure to figures/<name>.png at report quality."""
-    FIG_DIR.mkdir(parents=True, exist_ok=True)
-    path = FIG_DIR / f"{name}.png"
-    fig.savefig(path, dpi=200, bbox_inches="tight")
-    return path
+    With save=True the three tables are written to data/prepared/ (utf-8-sig so Excel shows Thai).
+    """
+    rows_in_file, raw = {}, {}
+    for year_be, path in RAW_FILES.items():
+        rows_in_file[year_be] = len(pd.read_csv(path, encoding="utf-8-sig", dtype=str, keep_default_na=False))
+        raw[year_be] = load_raw(path)
+    clean_df, catalog = clean(raw)
+    quality_log = quality_report(raw, rows_in_file, clean_df)
+    if save:
+        PREPARED_DIR.mkdir(parents=True, exist_ok=True)
+        clean_df.to_csv(PREPARED_DIR / "passengers_clean_long.csv", index=False, encoding="utf-8-sig")
+        catalog.to_csv(PREPARED_DIR / "service_catalog.csv", index=False, encoding="utf-8-sig")
+        quality_log.to_csv(PREPARED_DIR / "quality_log.csv", index=False, encoding="utf-8-sig")
+    return clean_df, catalog, quality_log
