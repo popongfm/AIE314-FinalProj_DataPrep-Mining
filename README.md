@@ -22,9 +22,8 @@ pip install -r requirements.txt
 **ทางเดียวจบ (ใช้ก่อนส่งงาน):** สร้าง prepared CSV และรูปทั้งหมดจากไฟล์ดิบ
 
 ```bash
-python src/run_all.py            # บอกว่าขั้นไหนยังเป็น TODO
-python src/run_all.py --strict   # ต้องผ่าน (exit 0) ก่อนส่งงาน
-pytest                           # ตรวจ contract ของทุกฟังก์ชัน
+python src/run_all.py --strict   # สร้าง prepared CSV 7 ไฟล์ + รูป 9 รูป (exit 0 = ครบ)
+pytest                           # 35 tests ต้องผ่านทั้งหมด
 ```
 
 **ดูผลพร้อมคำอธิบาย:** เปิด `jupyter lab` แล้วรันทีละ notebook ด้วย **Restart Kernel & Run All**
@@ -46,19 +45,18 @@ src/
   prep.py        โหลด + ทำความสะอาด + build_all()                       (A) ✅
   features.py    feature ที่ใช้หลายข้อ: calendar, safe_pct_change, monthly  ✅
   plots.py       สไตล์กราฟร่วม, ฟอนต์ไทย, save_fig                       (C) ✅
-  q1_weekday.py  ข้อ 1                                                   (A) select_rows ✅ ที่เหลือ TODO
-  q2_yoy.py      ข้อ 2 + สถานการณ์ S1–S5                                 (B) window/select_rows ✅ ที่เหลือ TODO
-  q3_intl.py     ข้อ 3                                                   (C) select_rows/coverage ✅ ที่เหลือ TODO
+  q1_weekday.py  ข้อ 1                                                   (A) ✅
+  q2_yoy.py      ข้อ 2 + สถานการณ์ S1–S5                                 (B) ✅
+  q3_intl.py     ข้อ 3                                                   (C) ✅
   run_all.py     รันทั้ง pipeline
 tests/           pytest: test_prep, test_features, test_q1_weekday, test_q2_yoy, test_q3_intl
 notebooks/       00–04 (บาง)
 ```
 
-**ขั้นตอนทำงานของแต่ละคน**
-1. อ่าน docstring ของฟังก์ชัน `TODO(A/B/C)` ในไฟล์ของตัวเอง ซึ่งระบุคอลัมน์ผลลัพธ์และสูตรไว้แล้ว
-2. เขียนฟังก์ชัน → `pytest tests/test_<ไฟล์>.py` จนเทสต์ที่เคย skip เปลี่ยนเป็น pass
-3. ลบ `#` หน้า cell ที่เกี่ยวข้องใน notebook → Restart & Run All → เขียนการตีความใน markdown
-4. commit เฉพาะไฟล์ของตัวเอง
+**สถานะ:** โค้ดครบทั้ง 3 ข้อแล้ว ช่องการตีความใน notebook 02–04 เป็น**ร่าง** (มีป้าย ✍️) ที่เขียนจากผลจริง
+แต่ละคนต้องอ่านทวนข้อของตัวเองและข้ออื่น เพราะทุกคนต้องตอบคำถามได้ทั้ง 3 ข้อในวันนำเสนอ
+
+**ถ้าจะแก้โค้ด:** แก้ใน `src/` → `pytest` → Restart & Run All notebook → `run_all.py --strict` แล้ว commit ทั้งโค้ด, CSV และรูปพร้อมกัน
 
 ## โครงสร้างโฟลเดอร์
 
@@ -80,10 +78,10 @@ AIE314_Topic4/
 | `passengers_clean_long.csv` | 01 | 1 บริการ × 1 วัน (ทั้งสองปี) พร้อม flag คุณภาพ | 1, 2, 3 |
 | `service_catalog.csv` | 01 | 1 บริการ (43 รายการ): หน่วย, ทิศ, ยอดรวม, เหตุผลที่ตัด | 1, 2, 3 |
 | `quality_log.csv` | 01 | 1 ปี: จำนวนแถว/ค่าว่าง/ค่าซ้ำ/ค่าศูนย์ ก่อน→หลัง | รายงานส่วนที่ 2 |
-| `q1_daily_features.csv` | 02 | TODO | 1 |
-| `q2_yoy_comparison.csv` | 03 | TODO | 2 |
-| `q2_missing_sensitivity.csv` | 03 | TODO | 2 |
-| `q3_international_monthly.csv` | 04 | TODO | 3 |
+| `q1_daily_features.csv` | 02 / `q1_weekday` | 1 บริการ × 1 วัน ปี 2568: วันในสัปดาห์, is_weekend, เดือน, dow_index (13,664 แถว) | 1 |
+| `q2_yoy_comparison.csv` | 03 / `q2_yoy` | 1 บริการ: ค่าเฉลี่ยต่อวัน 68/69, % และจำนวนที่เปลี่ยน, coverage, อันดับ (วิธีหลัก S2, 38 แถว) | 2 |
+| `q2_missing_sensitivity.csv` | 03 / `q2_yoy` | 1 บริการ × 1 วิธี (S1–S5): ตารางเดียวกับข้างบนต่อวิธี (191 แถว) | 2 |
+| `q3_international_monthly.csv` | 04 / `q3_intl` | 1 mode × 1 เดือน ปี 2568: ขาเข้า, ขาออก, net_flow, arr_dep_ratio, MoM %, mode_share (48 แถว) | 3 |
 
 ### คอลัมน์ของ `passengers_clean_long.csv`
 

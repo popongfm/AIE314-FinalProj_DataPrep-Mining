@@ -27,6 +27,10 @@ WEEKPART_COLORS = {"weekday": "#1f5f8b", "weekend": "#d9822b"}
 YEAR_COLORS = {2568: "#9aa5b1", 2569: "#1f5f8b"}
 MODE_ORDER = ["air", "road", "rail", "water"]
 MODE_LABEL_TH = {"air": "ทางอากาศ", "road": "ทางถนน", "rail": "ทางราง", "water": "ทางน้ำ"}
+MONTH_TH = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
+DIRECTION_LABEL_TH = {"arrival": "ขาเข้า", "departure": "ขาออก"}
+PURPOSE_COLORS = {"intercity": "#1f5f8b", "intracity": "#d9822b", "international": "#2e7d5b"}
+POS_COLOR, NEG_COLOR = "#1f5f8b", "#c4512b"
 PURPOSE_LABEL_TH = {"intercity": "ระหว่างจังหวัด", "intracity": "ภายในจังหวัด/กทม.",
                     "international": "ระหว่างประเทศ"}
 

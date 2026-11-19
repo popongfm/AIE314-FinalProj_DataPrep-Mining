@@ -59,3 +59,18 @@ def test_run_scenarios_covers_all(clean_df):
     sens = call_or_skip(q2_yoy.run_scenarios, q2_yoy.select_rows(clean_df))
     assert set(sens["scenario"]) == set(q2_yoy.SCENARIOS)
     assert {"scenario", "service", "yoy_change_pct", "rank"} <= set(sens.columns)
+
+
+def test_rank_stability_reference_matches_itself(clean_df):
+    sens = call_or_skip(q2_yoy.run_scenarios, q2_yoy.select_rows(clean_df))
+    stab = q2_yoy.rank_stability(sens).set_index("scenario")
+    assert set(stab.index) == set(q2_yoy.SCENARIOS)
+    assert np.isclose(stab.loc["S1", "spearman_vs_reference"], 1)
+    assert stab.loc["S1", "n_services_moved_2plus"] == 0
+
+
+def test_stopped_reporting_is_not_a_100pct_drop(clean_df):
+    # รถหมวด 3 reports zeros for all of 2569: S2 must not call that a -100% change
+    table = call_or_skip(q2_yoy.yoy_table, q2_yoy.apply_scenario(q2_yoy.select_rows(clean_df), "S2"))
+    row = table.set_index("service").loc["รถหมวด 3"]
+    assert np.isnan(row["yoy_change_pct"])
