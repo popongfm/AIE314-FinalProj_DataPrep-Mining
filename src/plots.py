@@ -12,8 +12,14 @@ from matplotlib import font_manager
 
 from prep import FIG_DIR
 
-THAI_FONT_CANDIDATES = ["Thonburi", "Sukhumvit Set", "Tahoma", "Noto Sans Thai", "Sarabun",
-                        "TH Sarabun New", "Leelawadee UI", "Loma", "Garuda"]
+from prep import PROJECT_ROOT
+
+# Sarabun (SIL OFL, fonts/OFL.txt) ships with the repo so every machine draws Thai the same way.
+# matplotlib does not apply OpenType GPOS mark positioning, so fonts that rely on it
+# (macOS Thonburi / Sukhumvit Set) show floating vowels and tone marks (สระลอย).
+# Sarabun and the TLWG fonts position marks without GPOS and render correctly.
+BUNDLED_FONT_DIR = PROJECT_ROOT / "fonts"
+THAI_FONT_CANDIDATES = ["Sarabun", "TH Sarabun New", "Loma", "Garuda", "Tahoma", "Leelawadee UI"]
 
 # One colour per category, used the same way in every chart.
 DIRECTION_COLORS = {"arrival": "#1f5f8b", "departure": "#d9822b"}
@@ -35,12 +41,14 @@ def setup_style() -> str | None:
         "grid.alpha": 0.3,
         "axes.unicode_minus": False,
     })
+    for path in sorted(BUNDLED_FONT_DIR.glob("*.ttf")):
+        font_manager.fontManager.addfont(str(path))
     installed = {f.name for f in font_manager.fontManager.ttflist}
     for name in THAI_FONT_CANDIDATES:
         if name in installed:
             plt.rcParams["font.family"] = name
             return name
-    print("Warning: no Thai font found; Thai labels may not render. Install Sarabun or Noto Sans Thai.")
+    print(f"Warning: no Thai font found (expected bundled fonts in {BUNDLED_FONT_DIR}); Thai labels may not render.")
     return None
 
 
