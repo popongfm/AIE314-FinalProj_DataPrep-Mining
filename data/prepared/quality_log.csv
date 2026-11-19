@@ -1,0 +1,3 @@
+﻿year_be,rows_in_file,blank_rows_removed,rows_after_blank_removal,duplicate_rows_removed,rows_clean,n_services,first_date,last_date,n_days,missing_values,zero_values,zero_in_long_runs,rows_unit_kan,rows_excluded_any_reason
+2568,69440,53744,15696,1,15695,43,2025-01-01,2025-12-31,365,308,583,549,1460,1825
+2569,3010,0,3010,0,3010,43,2026-01-01,2026-03-11,70,136,210,210,280,350
